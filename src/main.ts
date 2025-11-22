@@ -1,8 +1,42 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe, VersioningType, Logger } from '@nestjs/common'; // <--- Importamos Logger
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+  const logger = new Logger('Bootstrap'); // <--- Instanciamos el Logger
+
+  // 1. Habilitar CORS
+  app.enableCors();
+
+  // 2. Versionado
+  app.enableVersioning({
+    type: VersioningType.URI,
+  });
+
+  // 3. Pipes (Validación Global)
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
+
+  // 4. Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Pokemon API')
+    .setDescription('API para la gestión de Pokémons - Evaluación 3')
+    .setVersion('1.1')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
+
+  // 5. Iniciar Servidor
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+
+  // 6. Logs en consola al terminar de levantar
+  logger.log(`📑 Swagger documentation: http://localhost:${port}/docs`);
 }
 bootstrap();
