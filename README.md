@@ -31,6 +31,28 @@
 $ npm install
 ```
 
+## Variables de Entorno (.env)
+
+```
+    # --- Configuración del Servidor ---
+    PORT=3000
+    
+    # --- Configuración de Base de Datos (MySQL) ---
+    DB_HOST=localhost
+    DB_PORT=3306
+    DB_USER=root
+    DB_PASSWORD=root      # Cambia esto por tu contraseña local de MySQL
+    DB_NAME=pokemon_db
+    
+    # --- Configuración de Seguridad (JWT) ---
+    JWT_SECRET=EstaEsUnaClaveSuperSecreta_CambialaEnProduccion
+    JWT_EXPIRES_IN=1d
+```
+### Creación de Base de Datos
+```
+   CREATE DATABASE pokemon_db;
+```
+
 ## Compile and run the project
 
 ```bash
@@ -42,6 +64,11 @@ $ npm run start:dev
 
 # production mode
 $ npm run start:prod
+```
+
+### 📑 Documentación (Swagger)
+```
+http://localhost:3000/docs
 ```
 
 ## Run tests
@@ -57,41 +84,27 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 🛠 Tecnologías y Patrones
+Framework: NestJS (Arquitectura modular)
+Database: MySQL & TypeORM
+Auth: Passport & JWT Strategy (Guardas personalizadas)
+Validation: class-validator & class-transformer
+Docs: OpenAPI (Swagger)
 
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-## Stay in touch
+## Desarrollado por
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- Author - Bastian Rubio
+
+### 💡 Notas de Mentoría sobre este README:
+
+1.  **Sección "Setup" clara:** He separado la instalación, las variables de entorno y la base de datos en pasos numerados. Esto reduce la fricción inicial.
+2.  **Snippet `.env` listo para usar:** Proveer un bloque de código copiable para el `.env` evita errores tipográficos comunes (como escribir mal `DB_HOST`).
+3.  **Advertencias de Seguridad:** He añadido comentarios como `# Cambia esto por tu contraseña...` para inculcar prácticas de seguridad desde el inicio.
+4.  **Acceso rápido a Swagger:** Poner el link a la documentación (`/docs`) en una sección visible ayuda a que otros desarrolladores (o testers) prueben tu API rápidamente sin leer código.
 
 ## License
 

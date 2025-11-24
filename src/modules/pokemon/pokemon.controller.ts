@@ -1,11 +1,20 @@
-import { Controller, Get, Post, Body, Param, Delete, Version, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Version,
+  UseGuards,
+} from '@nestjs/common';
 import { PokemonService } from './pokemon.service';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport'; // Para proteger rutas
 
-@ApiTags('Pokemons') // Categoría en Swagger
-@Controller('pokemons') // Ruta base: /pokemons
+@ApiTags('Pokemones') // Categoría en Swagger
+@Controller('pokemones') // Ruta base: /pokemons
 export class PokemonController {
   constructor(private readonly pokemonService: PokemonService) {}
 
@@ -42,11 +51,5 @@ export class PokemonController {
   @ApiBearerAuth()
   remove(@Param('id') id: string) {
     return this.pokemonService.remove(+id);
-  }
-
-  // Endpoint especial para llenar la BD
-  @Post('seed')
-  seed() {
-    return this.pokemonService.seedFromPokeApi();
   }
 }

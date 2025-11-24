@@ -44,17 +44,23 @@ export class PokemonService {
     return await this.pokemonRepository.remove(pokemon);
   }
 
-  // Método extra: Poblar BD desde PokeAPI externa (Integración con Axios)
+  // Método actualizado
   async seedFromPokeApi() {
-    const { data } = await axios.get('https://pokeapi.co/api/v2/pokemon?limit=5');
+    const { data } = await axios.get(
+      'https://pokeapi.co/api/v2/pokemon?limit=5',
+    );
+
     const promesas = data.results.map(async (p: any) => {
       const detalles = await axios.get(p.url);
+
       return this.pokemonRepository.save({
         nombre: p.name,
         tipo: detalles.data.types[0].type.name,
-        imagenUrl: detalles.data.sprites.front_default
+        imagenUrl: detalles.data.sprites.front_default,
+        precio: Math.floor(Math.random() * 1000) + 100, // Genera precio aleatorio entre 100 y 1100
       });
     });
+
     return await Promise.all(promesas);
   }
 }

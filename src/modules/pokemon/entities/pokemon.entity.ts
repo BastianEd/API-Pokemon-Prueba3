@@ -12,9 +12,9 @@ export class Pokemon {
   @Column()
   tipo: string;
 
-  @Column({ default: 0 })
-  nivel: number; // Dato extra para v2
-
   @Column({ nullable: true })
   imagenUrl: string; // Para integración con API externa
+
+  @Column('int', { default: 100 }) // Default para que registros viejos no queden nulos
+  precio: number;
 }

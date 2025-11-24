@@ -1,4 +1,12 @@
-import { IsString, MinLength, IsInt, IsOptional, IsUrl } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  IsInt,
+  IsOptional,
+  IsUrl,
+  IsPositive,
+  Min,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePokemonDto {
@@ -12,10 +20,11 @@ export class CreatePokemonDto {
   @IsString()
   tipo: string;
 
-  @ApiProperty({ example: 10, required: false })
-  @IsInt()
-  @IsOptional()
-  nivel?: number;
+  @ApiProperty({ example: 500, description: 'Precio del Pokémon en monedas' })
+  @IsInt({ message: 'El precio debe ser un número entero' })
+  @IsPositive()
+  @Min(1)
+  precio: number;
 
   @ApiProperty({ required: false })
   @IsUrl()
