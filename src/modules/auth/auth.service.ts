@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -20,7 +24,9 @@ export class AuthService {
     const { password, ...userData } = registerDto;
 
     // Validar si el email ya existe
-    const userExists = await this.userRepository.findOneBy({ email: userData.email });
+    const userExists = await this.userRepository.findOneBy({
+      email: userData.email,
+    });
     if (userExists) {
       throw new BadRequestException('El correo ya está registrado');
     }
@@ -51,7 +57,7 @@ export class AuthService {
     // Buscamos el usuario y pedimos que traiga el password (que estaba oculto por select: false)
     const user = await this.userRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'password', 'name'],
+      select: ['id', 'email', 'password', 'name', 'role'],
     });
 
     if (!user) {
@@ -66,7 +72,11 @@ export class AuthService {
     }
 
     // Generamos el Token
-    const payload = { email: user.email, sub: user.id };
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      role: user.role,
+    };
     const token = this.jwtService.sign(payload);
 
     return {
@@ -74,8 +84,9 @@ export class AuthService {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+        role: user.role, // Devolvemos el rol al frontend también
+      },
     };
   }
 }

@@ -12,6 +12,8 @@ import { PokemonService } from './pokemon.service';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport'; // Para proteger rutas
+import { Patch, ParseIntPipe } from '@nestjs/common';
+import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 
 @ApiTags('Pokemones') // Categoría en Swagger
 @Controller('pokemones') // Ruta base: /pokemons
@@ -51,5 +53,24 @@ export class PokemonController {
   @ApiBearerAuth()
   remove(@Param('id') id: string) {
     return this.pokemonService.remove(+id);
+  }
+
+  @Version('2')
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener un Pokemon por ID' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.pokemonService.findOne(id);
+  }
+
+  @Version('2')
+  @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar Pokemon' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updatePokemonDto: UpdatePokemonDto, // <--- Aquí estaba el problema de formato
+  ) {
+    return this.pokemonService.update(id, updatePokemonDto);
   }
 }
