@@ -8,11 +8,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'secretKey', // Usa la del .env
+      secretOrKey: process.env.JWT_SECRET || 'secretKey',
     });
   }
 
+  // El payload es lo que guardaste en auth.service.ts: { email, sub, role }
   async validate(payload: any) {
-    return { userId: payload.sub, username: payload.username };
+    // Lo que retornes aquí es lo que se inyecta en request.user
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role // <--- ¡ESTO FALTABA! Sin esto, el Guard no ve el rol.
+    };
   }
 }
