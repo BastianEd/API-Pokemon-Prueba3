@@ -25,8 +25,8 @@ async function bootstrap() {
   // 4. Swagger
   const config = new DocumentBuilder()
     .setTitle('Pokemon API')
-    .setDescription('API para la gestión de Pokémons - Evaluación 3')
-    .setVersion('1.1')
+    .setDescription('API para la gestión de Pokémones - Evaluación 3')
+    .setVersion('1.3')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);

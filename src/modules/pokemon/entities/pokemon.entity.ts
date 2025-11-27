@@ -12,8 +12,8 @@ export class Pokemon {
   @Column()
   tipo: string;
 
-  @Column({ nullable: true })
-  imagenUrl: string; // Para integración con API externa
+  @Column({ type: 'varchar', nullable: true })
+  imagenUrl: string | null;
 
   @Column('int', { default: 100 }) // Default para que registros viejos no queden nulos
   precio: number;
