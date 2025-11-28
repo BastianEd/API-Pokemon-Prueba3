@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PokemonModule } from './modules/pokemon/pokemon.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -26,7 +28,7 @@ import { AuthModule } from './modules/auth/auth.module';
     PokemonModule,
     AuthModule,
   ],
-  controllers: [],
-  providers: [],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

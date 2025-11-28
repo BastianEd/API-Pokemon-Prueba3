@@ -30,4 +30,8 @@ export class CreatePokemonDto {
   @IsUrl()
   @IsOptional()
   imagenUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  descripcion?: string;
 }

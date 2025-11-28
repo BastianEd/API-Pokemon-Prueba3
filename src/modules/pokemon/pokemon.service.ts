@@ -80,22 +80,27 @@ export class PokemonService {
   }
 
   async seedFromPokeApi(limit = 20): Promise<Pokemon[]> {
-    this.logger.log(`Iniciando seed con ${limit} Pokémon desde PokéAPI...`);
+    this.logger.log(`Iniciando seed con ${limit} Pokémon con descripciones...`);
+
     const pokemonList = await this.pokeApiService.getPokemonList(limit, 0);
 
-    // CAMBIO: Usamos .create() primero para asegurar tipado correcto
     const entities = pokemonList.map((pokeData) => {
+      const tipo = Array.isArray(pokeData.types)
+        ? pokeData.types.join(', ')
+        : (pokeData.types ?? '');
       return this.pokemonRepository.create({
         nombre: pokeData.name,
-        tipo: pokeData.types[0],
-        imagenUrl: pokeData.image, // Ahora compatible gracias al cambio en entity
+        tipo,
+        imagenUrl: pokeData.image,
         precio: pokeData.price,
+        descripcion: pokeData.description,
       });
     });
 
-    // Guardamos las entidades ya creadas
+    await this.pokemonRepository.clear();
+
     const savedPokemons = await this.pokemonRepository.save(entities);
-    this.logger.log(`✅ Se guardaron ${savedPokemons.length} Pokémon en la BD`);
+    this.logger.log(`✅ ${savedPokemons.length} Pokémon guardados con éxito.`);
 
     return savedPokemons;
   }
@@ -110,6 +115,7 @@ export class PokemonService {
       tipo: pokeData.types.join(', '),
       imagenUrl: pokeData.image,
       precio: pokeData.price,
+      descripcion: pokeData.description,
     });
 
     // Guardamos la entidad

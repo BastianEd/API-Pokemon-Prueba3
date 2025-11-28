@@ -17,4 +17,8 @@ export class Pokemon {
 
   @Column('int', { default: 100 }) // Default para que registros viejos no queden nulos
   precio: number;
+
+  // Permitimos texto largo y nulos (por si la API falla)
+  @Column({ type: 'text', nullable: true })
+  descripcion: string | null;
 }
