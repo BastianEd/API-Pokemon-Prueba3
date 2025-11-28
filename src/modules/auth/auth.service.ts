@@ -2,6 +2,8 @@ import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
+  OnModuleInit,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,18 +14,53 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt'; // Librería para encriptar
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
   ) {}
 
-  // 1. Registro de Usuario
+  // --- SEEDING AUTOMÁTICO AL INICIAR ---
+  async onModuleInit() {
+    const adminEmail = 'admin@pokestore.cl';
+
+    // Verificamos si ya existe
+    const adminExists = await this.userRepository.findOneBy({
+      email: adminEmail,
+    });
+
+    if (!adminExists) {
+      // Crear contraseña encriptada
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('admin123', salt);
+
+      // Crear usuario admin forzando el rol
+      const newAdmin = this.userRepository.create({
+        name: 'Admin PokeStore',
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'admin', // <--- Rol Admin Forzado
+      });
+
+      await this.userRepository.save(newAdmin);
+      this.logger.log(
+        '🚀 Usuario Administrador creado automáticamente: admin@pokestore.cl / admin123',
+      );
+    } else {
+      this.logger.log(
+        '✅ El usuario Administrador ya existe en la base de datos.',
+      );
+    }
+  }
+  // --------------------------------------
+
+  // 1. Registro de Usuario (Público, rol 'user' por defecto)
   async register(registerDto: RegisterAuthDto) {
     const { password, ...userData } = registerDto;
 
-    // Validar si el email ya existe
     const userExists = await this.userRepository.findOneBy({
       email: userData.email,
     });
@@ -31,19 +68,17 @@ export class AuthService {
       throw new BadRequestException('El correo ya está registrado');
     }
 
-    // Encriptar contraseña (hash)
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Guardar usuario
     const user = this.userRepository.create({
       ...userData,
       password: hashedPassword,
+      // role: 'user' // Por defecto en la entidad
     });
 
     await this.userRepository.save(user);
 
-    // Retornamos lo mismo que el login para que entre directo
     return {
       message: 'Usuario creado exitosamente',
       user: { name: user.name, email: user.email },
@@ -54,7 +89,6 @@ export class AuthService {
   async login(loginDto: LoginAuthDto) {
     const { email, password } = loginDto;
 
-    // Buscamos el usuario y pedimos que traiga el password (que estaba oculto por select: false)
     const user = await this.userRepository.findOne({
       where: { email },
       select: ['id', 'email', 'password', 'name', 'role'],
@@ -64,18 +98,17 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas (Email)');
     }
 
-    // Comparamos la contraseña plana con la encriptada
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas (Password)');
     }
 
-    // Generamos el Token
+    // Generamos el Token con 'roles' como array para el Frontend
     const payload = {
       email: user.email,
       sub: user.id,
-      role: user.role,
+      roles: [user.role],
     };
     const token = this.jwtService.sign(payload);
 
@@ -85,7 +118,7 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role, // Devolvemos el rol al frontend también
+        roles: [user.role],
       },
     };
   }
