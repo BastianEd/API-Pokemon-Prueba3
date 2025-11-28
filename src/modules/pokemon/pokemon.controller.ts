@@ -28,8 +28,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
-// NOTA: Quitamos @ApiTags('Pokemones') de la clase para personalizarlo por metodo,
-// o podemos dejarlo y sobrescribirlo. Para mayor claridad, lo controlaremos abajo.
 @Controller('pokemones')
 export class PokemonController {
   constructor(private readonly pokemonService: PokemonService) {}
@@ -96,6 +94,23 @@ export class PokemonController {
     @Body() updatePokemonDto: UpdatePokemonDto,
   ) {
     return this.pokemonService.update(id, updatePokemonDto);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  DELETE
+  // ═══════════════════════════════════════════════════════════════
+  @ApiTags('Pokemones (BD Local)')
+  @Version('2')
+  @Delete(':id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard) // Protegemos la ruta
+  @Roles('admin') // Solo admins pueden borrar
+  @ApiBearerAuth() // Icono de candado en Swagger
+  @ApiOperation({ summary: 'Eliminar Pokémon (Solo Admin)' })
+  @ApiParam({ name: 'id', description: 'ID del Pokémon a eliminar' })
+  @ApiResponse({ status: 200, description: 'Pokémon eliminado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Pokémon no encontrado' })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.pokemonService.remove(id);
   }
 
   // ═══════════════════════════════════════════════════════════════

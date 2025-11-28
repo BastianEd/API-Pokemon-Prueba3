@@ -1,10 +1,10 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { isAxiosError } from 'axios'; //
+import { isAxiosError } from 'axios';
 
 // ═══════════════════════════════════════════════════════════════
-// INTERFACES (Contratos de datos)
+// INTERFACES (Contratos de respuesta de la API)
 // ═══════════════════════════════════════════════════════════════
 
 interface PokeApiType {
@@ -52,7 +52,7 @@ interface PokeApiListResponse {
   }>;
 }
 
-// Interfaces para la respuesta de búsqueda por Tipo
+// Interfaces para búsqueda por tipo (evitan el uso de any)
 interface PokeApiTypeRelation {
   pokemon: {
     name: string;
@@ -65,12 +65,12 @@ interface PokeApiTypeResponse {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// DTO INTERNO (Lo que entrega este servicio)
+// DTO INTERNO (Lo que devuelve este servicio)
 // ═══════════════════════════════════════════════════════════════
 
 export interface SimplifiedPokemon {
   name: string;
-  types: string[];
+  types: string[]; // Devolverá ['Fuego', 'Volador']
   image: string | null;
   price: number;
   description: string;
@@ -81,7 +81,8 @@ export class PokeApiService {
   private readonly logger = new Logger(PokeApiService.name);
   private readonly baseUrl = 'https://pokeapi.co/api/v2';
 
-  // Diccionario de traducción
+  // 👇 DICCIONARIO DE TRADUCCIÓN: Inglés -> Español
+  // Esto es lo que faltaba en tu archivo
   private readonly typeTranslations: Record<string, string> = {
     normal: 'Normal',
     fighting: 'Lucha',
@@ -111,7 +112,7 @@ export class PokeApiService {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  // Sanitización de descripción
+  // Metodo auxiliar para obtener descripción en español
   private getSpanishDescription(speciesData: PokeApiSpeciesResponse): string {
     const entry = speciesData.flavor_text_entries.find(
       (e) => e.language.name === 'es',
@@ -121,12 +122,12 @@ export class PokeApiService {
       : 'Sin descripción disponible.';
   }
 
-  // Traducción de tipos con validación
+  // 👇 MeTODO DE TRADUCCIÓN DE TIPO DE POKEMON
   private translateTypes(types: PokeApiType[]): string[] {
     return types.map((t) => {
       const englishName = t.type.name.toLowerCase();
       const spanishName = this.typeTranslations[englishName];
-      // Si no hay traducción, capitalizamos el inglés
+      // Si existe traducción, la usa. Si no, capitaliza el nombre en inglés.
       return (
         spanishName ||
         englishName.charAt(0).toUpperCase() + englishName.slice(1)
@@ -135,7 +136,7 @@ export class PokeApiService {
   }
 
   /**
-   * Obtiene Pokémon por nombre/ID con llamadas paralelas
+   * Obtiene un Pokémon por Nombre o ID con descripción y tipos traducidos.
    */
   async getPokemonByName(
     nameOrId: string | number,
@@ -143,7 +144,7 @@ export class PokeApiService {
     try {
       this.logger.log(`Consultando PokéAPI para: ${nameOrId}`);
 
-      // Tipamos las llamadas HTTP para evitar 'any'
+      // Tipamos las llamadas para evitar errores de 'unsafe member access'
       const [pokemonRes, speciesRes] = await Promise.all([
         firstValueFrom(
           this.httpService.get<PokeApiPokemonDetail>(
@@ -160,19 +161,20 @@ export class PokeApiService {
       const data = pokemonRes.data;
       const species = speciesRes.data;
 
-      // Traducción aplicada aquí
+      // 👇 AQUÍ APLICAMOS LA TRADUCCIÓN
       const translatedTypes = this.translateTypes(data.types);
 
       const image =
-        data.sprites.other?.['official-artwork']?.front_default ??
+        data.sprites.other?.['official-artwork']?.front_default ||
         data.sprites.front_default;
 
+      // Capitalizamos el nombre (pikachu -> Pikachu)
       const capitalizedName =
         data.name.charAt(0).toUpperCase() + data.name.slice(1);
 
       return {
         name: capitalizedName,
-        types: translatedTypes,
+        types: translatedTypes, // Array traducido: ['Fuego', ...]
         image: image,
         price: this.generateRandomPrice(),
         description: this.getSpanishDescription(species),
@@ -182,16 +184,12 @@ export class PokeApiService {
     }
   }
 
-  /**
-   * Obtiene lista paginada
-   */
   async getPokemonList(limit = 20, offset = 0): Promise<SimplifiedPokemon[]> {
     try {
       const validLimit = Math.min(limit, 50);
       const url = `${this.baseUrl}/pokemon?limit=${validLimit}&offset=${offset}`;
 
       this.logger.log(`Obteniendo lista base: ${url}`);
-
       const response = await firstValueFrom(
         this.httpService.get<PokeApiListResponse>(url),
       );
@@ -202,7 +200,6 @@ export class PokeApiService {
 
       return await Promise.all(detailPromises);
     } catch (error: unknown) {
-      // Manejo seguro del error sin usar 'any'
       const msg = error instanceof Error ? error.message : 'Error desconocido';
       this.logger.error(`Error en getPokemonList: ${msg}`);
       throw new HttpException(
@@ -212,9 +209,21 @@ export class PokeApiService {
     }
   }
 
-  /**
-   * Busca por tipo
-   */
+  // 1. NUEVO MeTODO: Obtener el conteo total sin descargar todo
+  async getTotalCount(): Promise<number> {
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.get<PokeApiListResponse>(
+          `${this.baseUrl}/pokemon?limit=1`,
+        ),
+      );
+      return data.count;
+    } catch (error) {
+      this.logger.error('Error obteniendo el total de pokémones', error);
+      return 0; // Fallback seguro
+    }
+  }
+
   async getPokemonByType(
     typeName: string,
     limit = 20,
@@ -223,9 +232,9 @@ export class PokeApiService {
       const url = `${this.baseUrl}/type/${typeName.toLowerCase()}`;
       this.logger.log(`Buscando por tipo: ${typeName}`);
 
-      // Tipado explícito de la respuesta de Tipo
+      // Usamos la interfaz correcta para evitar 'any'
       const response = await firstValueFrom(
-        this.httpService.get<PokeApiTypeResponse>(url)
+        this.httpService.get<PokeApiTypeResponse>(url),
       );
 
       const pokemonNames = response.data.pokemon
@@ -238,13 +247,13 @@ export class PokeApiService {
 
       return await Promise.all(detailPromises);
     } catch (error: unknown) {
+      // Uso de Type Guard para verificar error de Axios de forma segura
       if (isAxiosError(error) && error.response?.status === 404) {
         throw new HttpException(
           `El tipo '${typeName}' no existe`,
           HttpStatus.NOT_FOUND,
         );
       }
-
       const msg = error instanceof Error ? error.message : 'Error desconocido';
       this.logger.error(`Error en getPokemonByType: ${msg}`);
       throw new HttpException(
@@ -254,9 +263,7 @@ export class PokeApiService {
     }
   }
 
-  /**
-   * Manejo centralizado de errores con Type Guards
-   */
+  // Manejo de errores seguro
   private handleError(error: unknown, context: string | number): never {
     if (isAxiosError(error)) {
       if (error.response?.status === 404) {
@@ -270,7 +277,6 @@ export class PokeApiService {
 
     const msg = error instanceof Error ? error.message : 'Error desconocido';
     this.logger.error(`Error externo PokéAPI con '${context}': ${msg}`);
-
     throw new HttpException(
       'Error de comunicación con PokéAPI',
       HttpStatus.SERVICE_UNAVAILABLE,
