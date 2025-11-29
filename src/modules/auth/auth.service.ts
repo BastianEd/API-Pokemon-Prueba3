@@ -104,11 +104,11 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Credenciales inválidas (Password)');
     }
 
-    // Generamos el Token con 'roles' como array para el Frontend
+    // Generamos el Token con 'role' como array para el Frontend
     const payload = {
       email: user.email,
       sub: user.id,
-      roles: [user.role],
+      role: user.role,
     };
     const token = this.jwtService.sign(payload);
 
